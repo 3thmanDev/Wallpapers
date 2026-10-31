@@ -1,0 +1,82 @@
+name: Build IPA
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      # Errors are repeated as ::error:: annotations so they can be read without signing in to see the log.
+      - name: Build app (unsigned)
+        run: |
+          xcodebuild \
+            -project Wallpapers.xcodeproj \
+            -scheme Wallpapers \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            build > xcodebuild.log 2>&1 || {
+              grep -E "error:" xcodebuild.log | sort -u | head -10 | sed 's/^/::error::/'
+              tail -40 xcodebuild.log
+              exit 1
+            }
+
+      # Ad-hoc signature only so signing tools accept the binary; your store re-signs it.
+      - name: Package IPA
+        run: |
+          APP_PATH="build/Build/Products/Release-iphoneos/Wallpapers.app"
+          # Without a launch screen iOS runs the app letterboxed at the old 3.5" size.
+          test -d "$APP_PATH/LaunchScreen.storyboardc"
+          plutil -p "$APP_PATH/Info.plist" | grep UILaunch
+          # The import screen loads this at run time.
+          test -f "$APP_PATH/Harvest.js"
+          codesign --force --sign - --timestamp=none "$APP_PATH"
+          mkdir -p output/Payload
+          cp -R "$APP_PATH" output/Payload/
+          cd output
+          zip -qry Wallpapers.ipa Payload
+          ls -lh Wallpapers.ipa
+
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: Wallpapers-ipa
+          path: output/Wallpapers.ipa
+
+      - name: Check links, library and harvest script
+        if: always()
+        run: |
+          swiftc Wallpapers/Wallpaper.swift Wallpapers/TweetSources.swift Tests/main.swift -o wallpaper-check > swiftc.log 2>&1 || {
+            grep -E "error:" swiftc.log | head -10 | sed 's/^/::error::/'
+            cat swiftc.log
+            exit 1
+          }
+          ./wallpaper-check > swift-check.log 2>&1 || {
+            grep -E "FAIL" swift-check.log | head -10 | sed 's/^/::error::/'
+            cat swift-check.log
+            exit 1
+          }
+          node Tests/harvest-check.js > js-check.log 2>&1 || {
+            grep -E "FAIL" js-check.log | head -10 | sed 's/^/::error::/'
+            cat js-check.log
+            exit 1
+          }
+          cat swift-check.log js-check.log
+          echo "::notice::$(tail -1 swift-check.log)"
+          echo "::notice::$(tail -1 js-check.log)"
