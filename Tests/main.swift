@@ -124,6 +124,34 @@ let newer = Wallpaper(photoURL: "https://pbs.twimg.com/media/NEWER.png", tweetUR
 library.add([newer], reviveDeleted: true)
 check(library.wallpapers.first?.id == "NEWER" && library.wallpapers.first?.fileExtension == "png", "newest addition shows first")
 
+// MARK: - New-only imports
+
+check(library.hasSeen("HV8fJNdaYAA4Y2D", from: .likes), "photo already imported from likes is known to likes")
+check(!library.hasSeen("HV8fJNra0AAo106", from: .likes), "photo only in bookmarks is still new to likes")
+check(!library.hasSeen("NOTHERE", from: .bookmarks), "unknown photo is new")
+var trimmed = library
+trimmed.remove(["NEWER"])
+check(trimmed.hasSeen("NEWER", from: .likes), "deleted photo counts as known")
+
+func photo(_ id: String, _ source: WallpaperSource = .likes) -> Wallpaper {
+    Wallpaper(photoURL: "https://pbs.twimg.com/media/\(id).jpg", tweetURL: nil, width: 1, height: 2, source: source, addedAt: start)!
+}
+let knownLikes = (0..<40).map { photo("K\($0)") }
+var imported = Library()
+imported.add(knownLikes, reviveDeleted: false)
+
+var tracker = CatchUpTracker()
+check(!tracker.feed([photo("N1"), photo("N2")] + knownLikes[0..<18], source: .likes, library: imported),
+      "new photos then 18 known: keeps going")
+check(tracker.feed(Array(knownLikes[18..<30]), source: .likes, library: imported), "30 known in a row: stops")
+
+var interrupted = CatchUpTracker()
+_ = interrupted.feed(Array(knownLikes[0..<20]), source: .likes, library: imported)
+check(!interrupted.feed([photo("N3")] + knownLikes[20..<39], source: .likes, library: imported),
+      "a new photo in between starts the count again")
+check(!CatchUpTracker().feed(Array(knownLikes[0..<30]), source: .bookmarks, library: imported),
+      "photos known from likes don't stop a bookmarks run")
+
 let encoded = try! JSONEncoder().encode(library)
 let decoded = try! JSONDecoder().decode(Library.self, from: encoded)
 check(decoded == library, "library survives saving and loading")

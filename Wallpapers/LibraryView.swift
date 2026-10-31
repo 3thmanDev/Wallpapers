@@ -15,12 +15,17 @@ struct LibraryView: View {
     @EnvironmentObject private var store: LibraryStore
     @State private var filter = LibraryFilter.all
     @State private var portraitOnly = false
-    @State private var showingImport = false
-    @State private var showingAddLink = false
     @State private var viewer: ViewerRequest?
     @State private var selecting = false
     @State private var selection: Set<String> = []
     @State private var confirmingDelete = false
+    let onImport: () -> Void
+    let onAddLink: () -> Void
+
+    init(onImport: @escaping () -> Void, onAddLink: @escaping () -> Void) {
+        self.onImport = onImport
+        self.onAddLink = onAddLink
+    }
 
     private var items: [Wallpaper] {
         store.library.wallpapers.filter { wallpaper in
@@ -36,7 +41,7 @@ struct LibraryView: View {
         NavigationStack {
             Group {
                 if store.library.wallpapers.isEmpty {
-                    EmptyLibrary(onImport: { showingImport = true }, onAddLink: { showingAddLink = true })
+                    EmptyLibrary(onImport: onImport, onAddLink: onAddLink)
                 } else {
                     grid
                 }
@@ -44,7 +49,7 @@ struct LibraryView: View {
             .background(Theme.background.ignoresSafeArea())
             .navigationTitle("خلفياتي")
             .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
+                ToolbarItem(placement: .navigationBarTrailing) {
                     if !store.library.wallpapers.isEmpty {
                         Button(selecting ? "إلغاء" : "تحديد") {
                             selecting.toggle()
@@ -53,33 +58,12 @@ struct LibraryView: View {
                         .font(.cairo(16, .semibold))
                     }
                 }
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Menu {
-                        Button { showingImport = true } label: {
-                            Label("استيراد من تويتر", systemImage: "arrow.down.circle")
-                        }
-                        Button { showingAddLink = true } label: {
-                            Label("إضافة برابط", systemImage: "link")
-                        }
-                    } label: {
-                        Image(systemName: "plus.circle.fill")
-                            .font(.system(size: 24))
-                            .symbolRenderingMode(.hierarchical)
-                    }
-                }
             }
+            // The delete bar takes the tab bar's place while choosing.
+            .toolbar(selecting ? .hidden : .visible, for: .tabBar)
             .safeAreaInset(edge: .bottom) {
                 if selecting { selectionBar }
             }
-        }
-        .fullScreenCover(isPresented: $showingImport) {
-            ImportView(store: store).appEnvironment()
-        }
-        .sheet(isPresented: $showingAddLink) {
-            AddLinkSheet()
-                .environmentObject(store)
-                .appEnvironment()
-                .presentationDetents([.medium, .large])
         }
         .fullScreenCover(item: $viewer) { request in
             WallpaperViewer(items: request.items, startID: request.startID)

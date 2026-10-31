@@ -65,7 +65,7 @@ struct WallpaperViewer: View {
                         .monospacedDigit()
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)
-                        .background(Capsule().fill(.ultraThinMaterial))
+                        .glassBackground(Capsule())
                 }
                 Spacer()
                 RoundButton(systemImage: "trash") { confirmingDelete = true }
@@ -96,10 +96,7 @@ struct WallpaperViewer: View {
                 }
             }
             .padding(.vertical, 10)
-            .background(
-                RoundedRectangle(cornerRadius: 26, style: .continuous)
-                    .fill(.ultraThinMaterial)
-            )
+            .glassBackground(RoundedRectangle(cornerRadius: 26, style: .continuous))
             .padding(.horizontal, 14)
             .padding(.bottom, 6)
         }
@@ -223,7 +220,7 @@ private struct RoundButton: View {
             Image(systemName: systemImage)
                 .font(.system(size: 16, weight: .bold))
                 .frame(width: 40, height: 40)
-                .background(Circle().fill(.ultraThinMaterial))
+                .glassBackground(Circle())
         }
         .buttonStyle(PressableStyle())
     }

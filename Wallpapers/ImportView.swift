@@ -2,11 +2,13 @@ import SwiftUI
 import WebKit
 
 struct ImportView: View {
-    @Environment(\.dismiss) private var dismiss
     @StateObject private var session: ImportSession
+    /// Switches to the wallpapers tab.
+    let onDone: () -> Void
 
-    init(store: LibraryStore) {
+    init(store: LibraryStore, onDone: @escaping () -> Void) {
         _session = StateObject(wrappedValue: ImportSession(store: store))
+        self.onDone = onDone
     }
 
     var body: some View {
@@ -39,11 +41,8 @@ struct ImportView: View {
     private var header: some View {
         VStack(spacing: 12) {
             HStack {
-                Button("تم") { dismiss() }
-                    .font(.cairo(17, .bold))
-                Spacer()
                 Text("استيراد من تويتر")
-                    .font(.cairo(17, .bold))
+                    .font(.cairo(22, .black))
                 Spacer()
                 Menu {
                     Button { session.reload() } label: {
@@ -95,17 +94,33 @@ struct ImportView: View {
                     counts
                     SecondaryButton(title: "إيقاف", systemImage: "pause.fill") { session.stop() }
                 } else if session.reachedEnd {
-                    status(icon: "checkmark.circle.fill", title: "خلصت \(session.source.title)", detail: nil)
-                    counts
+                    if session.caughtUp {
+                        status(
+                            icon: "checkmark.circle.fill",
+                            title: session.added > 0 ? "انضافت \(session.added) جديدة" : "ما فيه جديد",
+                            detail: "وقف لما وصل للصور اللي عندك من قبل."
+                        )
+                    } else {
+                        status(icon: "checkmark.circle.fill", title: "خلصت \(session.source.title)", detail: nil)
+                        counts
+                    }
                     let other: WallpaperSource = session.source == .bookmarks ? .likes : .bookmarks
                     PrimaryButton(title: "اسحب \(other.title)", systemImage: "arrow.down.circle.fill") {
                         session.select(other, startNow: true)
                     }
-                    SecondaryButton(title: "تم") { dismiss() }
+                    SecondaryButton(title: "شوف الخلفيات", systemImage: "photo.stack", action: onDone)
+                    if session.caughtUp { fullScanButton }
                 } else {
                     if session.found > 0 { counts }
-                    PrimaryButton(title: "ابدأ سحب \(session.source.title)", systemImage: "arrow.down.circle.fill") {
-                        session.start()
+                    if session.canImportNewOnly {
+                        PrimaryButton(title: "اسحب الجديد من \(session.source.title)", systemImage: "arrow.down.circle.fill") {
+                            session.start()
+                        }
+                        fullScanButton
+                    } else {
+                        PrimaryButton(title: "ابدأ سحب \(session.source.title)", systemImage: "arrow.down.circle.fill") {
+                            session.start()
+                        }
                     }
                 }
             }
@@ -118,6 +133,20 @@ struct ImportView: View {
         )
         .animation(.easeOut(duration: 0.2), value: session.isRunning)
         .animation(.easeOut(duration: 0.2), value: session.reachedEnd)
+    }
+
+    /// For when an earlier import was stopped halfway and older photos are still missing.
+    private var fullScanButton: some View {
+        Button {
+            session.start(fullScan: true)
+        } label: {
+            Text("سحب كامل لين آخر القائمة")
+                .font(.cairo(14, .semibold))
+                .foregroundColor(Theme.secondary)
+                .frame(maxWidth: .infinity)
+                .frame(height: 32)
+        }
+        .buttonStyle(.plain)
     }
 
     private var counts: some View {

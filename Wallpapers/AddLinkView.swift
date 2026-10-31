@@ -22,7 +22,7 @@ enum LinkImporter {
     }
 }
 
-struct AddLinkSheet: View {
+struct AddLinkView: View {
     private enum Status: Equatable {
         case idle
         case working
@@ -31,20 +31,20 @@ struct AddLinkSheet: View {
     }
 
     @EnvironmentObject private var store: LibraryStore
-    @Environment(\.dismiss) private var dismiss
     @State private var text = ""
     @State private var status = Status.idle
     @FocusState private var fieldFocused: Bool
+    /// Switches to the wallpapers tab.
+    let onDone: () -> Void
+
+    init(onDone: @escaping () -> Void) {
+        self.onDone = onDone
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            HStack {
-                Text("إضافة برابط تغريدة")
-                    .font(.cairo(20, .bold))
-                Spacer()
-                Button("تم") { dismiss() }
-                    .font(.cairo(16, .bold))
-            }
+            Text("إضافة برابط")
+                .font(.cairo(22, .black))
             Text("من تويتر اضغط مشاركة ← نسخ الرابط، وبعدها الصقه هنا. تقدر تلصق كذا رابط مرة وحدة.")
                 .font(.cairo(14))
                 .foregroundColor(Theme.secondary)
@@ -100,9 +100,12 @@ struct AddLinkSheet: View {
                 Text("يجيب الصور…").font(.cairo(15, .semibold))
             }
         case .done(let message):
-            Label(message, systemImage: "checkmark.circle.fill")
-                .font(.cairo(15, .semibold))
-                .foregroundColor(Theme.accent)
+            VStack(alignment: .leading, spacing: 14) {
+                Label(message, systemImage: "checkmark.circle.fill")
+                    .font(.cairo(15, .semibold))
+                    .foregroundColor(Theme.accent)
+                SecondaryButton(title: "شوف الخلفيات", systemImage: "photo.stack", action: onDone)
+            }
         case .failed(let message):
             Label(message, systemImage: "exclamationmark.circle.fill")
                 .font(.cairo(15, .semibold))

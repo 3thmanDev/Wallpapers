@@ -166,10 +166,31 @@ struct Library: Codable, Equatable {
         wallpapers.first { $0.id == id }
     }
 
+    /// Already imported from this list, or deleted by the user.
+    func hasSeen(_ id: String, from source: WallpaperSource) -> Bool {
+        deletedIDs.contains(id) || wallpaper(id)?.sources.contains(source) == true
+    }
+
     var pendingCount: Int { wallpapers.filter { !$0.isDownloaded && !$0.failed }.count }
     var failedCount: Int { wallpapers.filter(\.failed).count }
 
     func count(of source: WallpaperSource) -> Int {
         wallpapers.filter { $0.sources.contains(source) }.count
+    }
+}
+
+/// Decides when a "new only" import can stop. X lists bookmarks and likes newest first,
+/// so once a long run of photos is all already in the library, the rest is too.
+struct CatchUpTracker {
+    static let knownRunToStop = 30
+    private(set) var knownRun = 0
+
+    /// Feed each page in list order, before adding it to the library.
+    /// Returns true once enough known photos came in a row.
+    mutating func feed(_ wallpapers: [Wallpaper], source: WallpaperSource, library: Library) -> Bool {
+        for wallpaper in wallpapers {
+            knownRun = library.hasSeen(wallpaper.id, from: source) ? knownRun + 1 : 0
+        }
+        return knownRun >= Self.knownRunToStop
     }
 }

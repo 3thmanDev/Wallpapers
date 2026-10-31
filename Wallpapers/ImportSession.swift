@@ -12,6 +12,8 @@ final class ImportSession: NSObject, ObservableObject, WKNavigationDelegate, WKU
     @Published private(set) var isLoggedIn: Bool?
     @Published private(set) var isRunning = false
     @Published private(set) var reachedEnd = false
+    /// The run stopped early because it reached photos the library already has.
+    @Published private(set) var caughtUp = false
     @Published private(set) var isLoading = true
     @Published private(set) var found = 0
     @Published private(set) var added = 0
@@ -21,6 +23,9 @@ final class ImportSession: NSObject, ObservableObject, WKNavigationDelegate, WKU
     private var seen = Set<String>()
     private var startWhenLoaded = false
     private var nextDate = Date()
+    private var began = false
+    private var newOnly = false
+    private var tracker = CatchUpTracker()
 
     init(store: LibraryStore) {
         self.store = store
@@ -49,20 +54,32 @@ final class ImportSession: NSObject, ObservableObject, WKNavigationDelegate, WKU
     }
 
     /// Opens the list straight away when X still remembers the user, the sign-in page otherwise.
+    /// Only the first call loads anything, so coming back to the tab keeps the page as it was.
     func begin() async {
+        guard !began else { return }
+        began = true
         let cookies = await webView.configuration.websiteDataStore.httpCookieStore.allCookies()
         let signedIn = cookies.contains { $0.name == "auth_token" && $0.domain.hasSuffix("x.com") }
         webView.load(URLRequest(url: signedIn ? Self.listURL(source) : Self.loginURL))
     }
 
-    func start() {
+    /// Once a list has been imported, the next run only needs what was added since.
+    var canImportNewOnly: Bool {
+        store.library.count(of: source) > 0
+    }
+
+    func start(fullScan: Bool = false) {
         reachedEnd = false
+        caughtUp = false
+        newOnly = !fullScan && canImportNewOnly
+        tracker = CatchUpTracker()
         startWhenLoaded = true
         webView.load(URLRequest(url: Self.listURL(source)))
     }
 
     func stop() {
         startWhenLoaded = false
+        newOnly = false
         webView.evaluateJavaScript("window.__wpAuto && window.__wpAuto(false)")
     }
 
@@ -78,6 +95,7 @@ final class ImportSession: NSObject, ObservableObject, WKNavigationDelegate, WKU
         found = 0
         added = 0
         reachedEnd = false
+        caughtUp = false
         if wasRunning || startNow {
             start()
         } else if isLoggedIn == true {
@@ -116,12 +134,23 @@ final class ImportSession: NSObject, ObservableObject, WKNavigationDelegate, WKU
             let wallpapers = message.wallpapers(startingAt: nextDate)
             nextDate = nextDate.addingTimeInterval(-Double(wallpapers.count + 1) * 0.001)
             found += wallpapers.filter { seen.insert($0.id).inserted }.count
+            // Checked before adding, or this page's own photos would count as known.
+            let caughtUpNow = newOnly && message.source.map {
+                tracker.feed(wallpapers, source: $0, library: store.library)
+            } == true
             added += store.add(wallpapers, reviveDeleted: false)
+            if caughtUpNow {
+                stop()
+                isRunning = false
+                reachedEnd = true
+                caughtUp = true
+            }
         case "running":
             isRunning = message.running ?? false
         case "end":
             isRunning = false
             reachedEnd = true
+            newOnly = false
         default:
             break
         }

@@ -7,10 +7,14 @@ on:
 
 jobs:
   build:
-    runs-on: macos-15
+    # macOS 26 defaults to Xcode 26; the iOS 26 SDK is what gives the app the Liquid Glass look.
+    runs-on: macos-26
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Show Xcode version
+        run: echo "::notice::$(xcodebuild -version | head -1)"
 
       - name: Install XcodeGen
         run: brew install xcodegen
