@@ -1,4 +1,4 @@
-// Runs Resources/Harvest.js against fake X timeline responses, outside any browser:
+// Runs Resources/Harvest.txt against fake X timeline responses, outside any browser:
 //   node Tests/harvest-check.js
 // The responses copy the shape of X's real Bookmarks/Likes pages (checked against a
 // live account), with made-up ids and no real tweets.
@@ -101,7 +101,7 @@ const context = {
   console,
 };
 vm.createContext(context);
-vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'Resources', 'Harvest.js'), 'utf8'), context);
+vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'Resources', 'Harvest.txt'), 'utf8'), context);
 
 const request = (url) => {
   const xhr = new context.XMLHttpRequest();

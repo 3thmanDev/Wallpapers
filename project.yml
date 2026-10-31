@@ -10,7 +10,7 @@ settings:
   base:
     SWIFT_VERSION: "5.0"
     MARKETING_VERSION: "1.0"
-    CURRENT_PROJECT_VERSION: "1"
+    CURRENT_PROJECT_VERSION: "2"
 
 targets:
   Wallpapers:
@@ -18,7 +18,7 @@ targets:
     platform: iOS
     sources:
       - path: Wallpapers
-      # Harvest.js is loaded at run time, so it has to be copied, not compiled.
+      # Harvest.txt is loaded at run time, so it has to be copied, not compiled.
       - path: Resources
         buildPhase: resources
     settings:

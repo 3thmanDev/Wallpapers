@@ -1,6 +1,6 @@
 import Foundation
 
-/// A message from `Harvest.js` inside the X page.
+/// A message from `Harvest.txt` inside the X page.
 struct HarvestMessage: Decodable {
     struct Photo: Decodable {
         let url: String

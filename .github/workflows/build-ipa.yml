@@ -45,7 +45,7 @@ jobs:
           test -d "$APP_PATH/LaunchScreen.storyboardc"
           plutil -p "$APP_PATH/Info.plist" | grep UILaunch
           # The import screen loads this at run time.
-          test -f "$APP_PATH/Harvest.js"
+          test -f "$APP_PATH/Harvest.txt"
           codesign --force --sign - --timestamp=none "$APP_PATH"
           mkdir -p output/Payload
           cp -R "$APP_PATH" output/Payload/

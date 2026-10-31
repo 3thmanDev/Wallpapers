@@ -1,5 +1,5 @@
 // Checks the parts of the app that don't need an iPhone: reading X photo and tweet
-// links, the messages from Harvest.js, the two link services, and the library merge rules.
+// links, the messages from Harvest.txt, the two link services, and the library merge rules.
 //   swiftc Wallpapers/Wallpaper.swift Wallpapers/TweetSources.swift Tests/main.swift -o wallpaper-check && ./wallpaper-check
 import Foundation
 
@@ -51,7 +51,7 @@ check(TweetLink.tweetURL(from: "https://x.com/blvck/status/2116444614647583222/p
 check(TweetLink.tweetURL(from: "https://twitter.com/blvck/status/12345?s=20")?.absoluteString
     == "https://x.com/blvck/status/12345", "twitter.com link moved to x.com")
 
-// MARK: - Messages from Harvest.js
+// MARK: - Messages from Harvest.txt
 
 let harvestJSON = """
 {"event":"photos","op":"Bookmarks","entries":20,"photos":[

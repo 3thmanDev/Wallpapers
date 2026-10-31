@@ -1,7 +1,7 @@
 import Foundation
 import WebKit
 
-/// The X page inside the app. The user signs in there once; `Harvest.js` then hands
+/// The X page inside the app. The user signs in there once; `Harvest.txt` then hands
 /// over the photos from the bookmarks and likes pages while it scrolls them.
 @MainActor
 final class ImportSession: NSObject, ObservableObject, WKNavigationDelegate, WKUIDelegate {
@@ -28,7 +28,8 @@ final class ImportSession: NSObject, ObservableObject, WKNavigationDelegate, WKU
         configuration.websiteDataStore = .default()
         // Without the Safari part of the user agent X may treat the page as an unsupported browser.
         configuration.applicationNameForUserAgent = "Version/18.0 Mobile/15E148 Safari/604.1"
-        if let url = Bundle.main.url(forResource: "Harvest", withExtension: "js"),
+        // The script ships as .txt: Gmail refuses an attachment that has a .js file anywhere inside it.
+        if let url = Bundle.main.url(forResource: "Harvest", withExtension: "txt"),
            let script = try? String(contentsOf: url, encoding: .utf8) {
             configuration.userContentController.addUserScript(
                 WKUserScript(source: script, injectionTime: .atDocumentStart, forMainFrameOnly: true)

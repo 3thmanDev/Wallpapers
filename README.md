@@ -16,7 +16,7 @@
 
 ## كيف يشتغل الاستيراد
 
-صفحة تويتر تفتح داخل التطبيق (`WKWebView`)، و`Resources/Harvest.js` يقرأ الصور من صفحات العلامات المرجعية والإعجابات اللي تويتر نفسه ينزلها وهو يمرر الصفحة لتحت. ما يقرأ شي ثاني من الحساب.
+صفحة تويتر تفتح داخل التطبيق (`WKWebView`)، و`Resources/Harvest.txt` يقرأ الصور من صفحات العلامات المرجعية والإعجابات اللي تويتر نفسه ينزلها وهو يمرر الصفحة لتحت. ما يقرأ شي ثاني من الحساب.
 
 الإضافة بالرابط تسأل [api.fxtwitter.com](https://github.com/FixTweet/FxTwitter)، ولو ما رد تسأل `cdn.syndication.twimg.com` (اللي تستخدمه التغريدات المضمّنة في المواقع).
 
@@ -30,12 +30,12 @@
 
 - `Wallpapers/` — كود التطبيق.
 - `Wallpapers/Wallpaper.swift` — الخلفية، قراءة روابط الصور والتغريدات، وقواعد المكتبة (الدمج والحذف).
-- `Wallpapers/TweetSources.swift` — رسائل `Harvest.js` وخدمتين جلب الصور بالرابط.
+- `Wallpapers/TweetSources.swift` — رسائل `Harvest.txt` وخدمتين جلب الصور بالرابط.
 - `Wallpapers/LibraryStore.swift` — الحفظ في الجهاز وتنزيل الصور.
 - `Wallpapers/ImportSession.swift` و`ImportView.swift` — شاشة الاستيراد من تويتر.
 - `Wallpapers/AddLinkSheet.swift` — الإضافة بالرابط.
 - `Wallpapers/LibraryView.swift` و`WallpaperViewer.swift` — الشبكة والعرض الكامل.
-- `Resources/Harvest.js` — السكربت اللي يشتغل داخل صفحة تويتر.
+- `Resources/Harvest.txt` — السكربت اللي يشتغل داخل صفحة تويتر.
 - `Wallpapers/Fonts/` — خط Cairo (رخصة OFL في `OFL.txt`).
 - `Tests/main.swift` و`Tests/harvest-check.js` — فحوصات تشتغل مع كل بناء.
 - `project.yml` — إعدادات المشروع لـ XcodeGen.
