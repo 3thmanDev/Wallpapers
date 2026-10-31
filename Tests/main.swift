@@ -149,7 +149,8 @@ var interrupted = CatchUpTracker()
 _ = interrupted.feed(Array(knownLikes[0..<20]), source: .likes, library: imported)
 check(!interrupted.feed([photo("N3")] + knownLikes[20..<39], source: .likes, library: imported),
       "a new photo in between starts the count again")
-check(!CatchUpTracker().feed(Array(knownLikes[0..<30]), source: .bookmarks, library: imported),
+var bookmarksRun = CatchUpTracker()
+check(!bookmarksRun.feed(Array(knownLikes[0..<30]), source: .bookmarks, library: imported),
       "photos known from likes don't stop a bookmarks run")
 
 let encoded = try! JSONEncoder().encode(library)
